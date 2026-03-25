@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
-const API = "http://3.139.61.49:5000";
+const API = "/api";
 
 const alumnos = ref([]);
 
