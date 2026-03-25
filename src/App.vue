@@ -44,10 +44,10 @@ const alumnosFiltrados = computed(() => {
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase();
     return alumnos.value.filter(a => 
-      a.nombre.toLowerCase().includes(query) ||
-      a.apellidoPaterno.toLowerCase().includes(query) ||
-      a.apellidoMaterno.toLowerCase().includes(query) ||
-      a.numeroControl.toLowerCase().includes(query)
+      (a.nombre || '').toLowerCase().includes(query) ||
+      (a.apellidoPaterno || '').toLowerCase().includes(query) ||
+      (a.apellidoMaterno || '').toLowerCase().includes(query) ||
+      (a.numeroControl || '').toLowerCase().includes(query)
     );
   }
   return alumnos.value.filter(a => a.carrera === selectedCarrera.value);
@@ -298,6 +298,14 @@ onMounted(cargarAlumnos);
       </div>
 
       <div class="col-md-12 mb-4">
+        <div class="row justify-content-center mb-3">
+          <div class="col-auto">
+            <div class="badge bg-primary rounded-pill px-4 py-2 shadow-sm d-flex align-items-center gap-2" style="font-size: 1.1rem; background-color: #2563eb !important;">
+              <i class="bi bi-people-fill"></i>
+              <span>Total de Estudiantes: {{ alumnos.length }}</span>
+            </div>
+          </div>
+        </div>
         <div class="row justify-content-center mb-4">
           <div class="col-md-6">
             <div class="input-group shadow-sm" style="border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0;">
