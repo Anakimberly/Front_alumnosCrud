@@ -30,6 +30,7 @@ const carreras = [
 ];
 
 const selectedCarrera = ref(carreras[0]);
+const searchQuery = ref('');
 const currentPage = ref(1);
 const pageSize = 15;
 
@@ -40,6 +41,15 @@ const countAlumnosByCarrera = (carrera) => {
 import { computed } from 'vue';
 
 const alumnosFiltrados = computed(() => {
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase();
+    return alumnos.value.filter(a => 
+      a.nombre.toLowerCase().includes(query) ||
+      a.apellidoPaterno.toLowerCase().includes(query) ||
+      a.apellidoMaterno.toLowerCase().includes(query) ||
+      a.numeroControl.toLowerCase().includes(query)
+    );
+  }
   return alumnos.value.filter(a => a.carrera === selectedCarrera.value);
 });
 
@@ -288,6 +298,23 @@ onMounted(cargarAlumnos);
       </div>
 
       <div class="col-md-12 mb-4">
+        <div class="row justify-content-center mb-4">
+          <div class="col-md-6">
+            <div class="input-group shadow-sm" style="border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0;">
+              <span class="input-group-text bg-white border-0 ps-3">
+                <i class="bi bi-search text-primary"></i>
+              </span>
+              <input 
+                type="text" 
+                class="form-control border-0 py-2" 
+                v-model="searchQuery" 
+                placeholder="Buscar alumno por nombre, apellidos o número de control..."
+                style="box-shadow: none;"
+              >
+            </div>
+          </div>
+        </div>
+
         <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
           <button v-for="carrera in carreras" :key="carrera" 
             @click="cambiarCarrera(carrera)"
@@ -303,7 +330,8 @@ onMounted(cargarAlumnos);
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-3">
               <h5 class="card-title m-0" style="color: #2c3e50; font-weight: bold;">
-                <i class="bi bi-mortarboard-fill me-2"></i> {{ selectedCarrera }}
+                <i class="bi bi-mortarboard-fill me-2"></i> 
+                {{ searchQuery ? 'Resultados de búsqueda' : selectedCarrera }}
               </h5>
               <span class="badge bg-primary rounded-pill px-3 py-2">{{ alumnosFiltrados.length }} alumnos</span>
             </div>
