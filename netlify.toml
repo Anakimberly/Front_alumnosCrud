@@ -1,5 +1,5 @@
 [[redirects]]
   from = "/api/*"
-  to = "http://3.139.61.49:5000/:splat"
+  to = "https://backalumnos-production.up.railway.app"
   status = 200
   force = true

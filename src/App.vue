@@ -70,7 +70,7 @@ const cambiarCarrera = (carrera) => {
 
 const cargarAlumnos = async () => {
 
-  const response = await axios.get('http://localhost:8080/alumnos/traer-alumnos')
+  const response = await axios.get('backalumnos-production.up.railway.app/alumnos/traer-alumnos')
   alumnos.value = response.data;
   console.log(alumnos.value);
 }
@@ -112,7 +112,7 @@ const agregarAlumno = async () => {
 
   try {
     if (editado.value) {
-      await axios.put(`http://localhost:8080/alumnos/editar-alumnos/${nuevoAlumno.value.id}`, payload);
+      await axios.put(`backalumnos-production.up.railway.app/alumnos/editar-alumnos/${nuevoAlumno.value.id}`, payload);
       Swal.fire({
         icon: 'success',
         title: 'Alumno actualizado correctamente',
@@ -121,7 +121,7 @@ const agregarAlumno = async () => {
       });
       editado.value = false;
     } else {
-      await axios.post('http://localhost:8080/alumnos/insertar-alumnos', payload);
+      await axios.post('backalumnos-production.up.railway.app/alumnos/insertar-alumnos', payload);
       Swal.fire({
         icon: 'success',
         title: 'Alumno agregado correctamente',
@@ -204,7 +204,7 @@ const eliminarAlumno = async (id) => {
 
 const eliminarAlumnoPorId = async (id) => {
   try {
-    await axios.delete(`http://localhost:8080/alumnos/eliminar-alumnos/${id}`);
+    await axios.delete(`backalumnos-production.up.railway.app/alumnos/eliminar-alumnos/${id}`);
 
     console.log('Alumno eliminado con id:', id);
     await cargarAlumnos();
