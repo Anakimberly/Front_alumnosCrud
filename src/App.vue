@@ -31,6 +31,7 @@ const carreras = [
 
 const selectedCarrera = ref(carreras[0]);
 const searchQuery = ref('');
+const mostrarTodos = ref(false);
 const currentPage = ref(1);
 const pageSize = 15;
 
@@ -50,6 +51,9 @@ const alumnosFiltrados = computed(() => {
       (a.numeroControl || '').toLowerCase().includes(query)
     );
   }
+  if (mostrarTodos.value) {
+    return alumnos.value;
+  }
   return alumnos.value.filter(a => a.carrera === selectedCarrera.value);
 });
 
@@ -63,8 +67,26 @@ const alumnosPaginados = computed(() => {
   return alumnosFiltrados.value.slice(start, end);
 });
 
+const alumnosAgrupados = computed(() => {
+  const grouped = {};
+  carreras.forEach(carrera => {
+    const list = alumnos.value.filter(a => a.carrera === carrera);
+    if (list.length > 0) {
+      grouped[carrera] = list;
+    }
+  });
+  return grouped;
+});
+
 const cambiarCarrera = (carrera) => {
   selectedCarrera.value = carrera;
+  mostrarTodos.value = false;
+  currentPage.value = 1;
+};
+
+const verTodosLosAlumnos = () => {
+  mostrarTodos.value = true;
+  searchQuery.value = '';
   currentPage.value = 1;
 };
 
@@ -300,7 +322,17 @@ onMounted(cargarAlumnos);
       <div class="col-md-12 mb-4">
         <div class="row justify-content-center mb-3">
           <div class="col-auto">
-            <div class="badge bg-primary rounded-pill px-4 py-2 shadow-sm d-flex align-items-center gap-2" style="font-size: 1.1rem; background-color: #2563eb !important;">
+            <div 
+              class="badge rounded-pill px-4 py-2 shadow-sm d-flex align-items-center gap-2" 
+              @click="verTodosLosAlumnos"
+              :style="{ 
+                fontSize: '1.1rem', 
+                backgroundColor: mostrarTodos ? '#1e3a8a' : '#2563eb', 
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                border: mostrarTodos ? '2px solid #fff' : 'none'
+              }"
+            >
               <i class="bi bi-people-fill"></i>
               <span>Total de Estudiantes: {{ alumnos.length }}</span>
             </div>
@@ -326,10 +358,10 @@ onMounted(cargarAlumnos);
         <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
           <button v-for="carrera in carreras" :key="carrera" 
             @click="cambiarCarrera(carrera)"
-            :class="['btn', selectedCarrera === carrera ? 'btn-primary' : 'btn-outline-primary']"
+            :class="['btn', (selectedCarrera === carrera && !mostrarTodos) ? 'btn-primary' : 'btn-outline-primary']"
             style="border-radius: 12px; font-weight: 500; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;">
             {{ carrera }}
-            <span class="badge rounded-pill bg-primary" v-if="selectedCarrera === carrera">{{ countAlumnosByCarrera(carrera) }}</span>
+            <span class="badge rounded-pill bg-primary" v-if="selectedCarrera === carrera && !mostrarTodos">{{ countAlumnosByCarrera(carrera) }}</span>
             <span class="badge rounded-pill bg-primary" style="opacity: 0.8;" v-else>{{ countAlumnosByCarrera(carrera) }}</span>
           </button>
         </div>
@@ -339,70 +371,121 @@ onMounted(cargarAlumnos);
             <div class="d-flex justify-content-between align-items-center mb-3">
               <h5 class="card-title m-0" style="color: #2c3e50; font-weight: bold;">
                 <i class="bi bi-mortarboard-fill me-2"></i> 
-                {{ searchQuery ? 'Resultados de búsqueda' : selectedCarrera }}
+                {{ searchQuery ? 'Resultados de búsqueda' : (mostrarTodos ? 'Todos los Estudiantes Registrados' : selectedCarrera) }}
               </h5>
               <span class="badge bg-primary rounded-pill px-3 py-2">{{ alumnosFiltrados.length }} alumnos</span>
             </div>
-            <div class="table-responsive">
-              <table class="table table-hover align-middle">
-                <thead class="table-light">
-                  <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">NOMBRE</th>
-                    <th scope="col">AP. PATERNO</th>
-                    <th scope="col">AP. MATERNO</th>
-                    <th scope="col">EMAIL</th>
-                    <th scope="col">Nº CONTROL</th>
-                    <th scope="col">CARRERA</th>
-                    <th scope="col">TELÉFONO</th>
-                    <th scope="col">IMAGEN</th>
-                    <th scope="col">ACCIONES</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(alumno, index) in alumnosPaginados" :key="alumno.id">
-                    <td>{{ (currentPage - 1) * pageSize + index + 1 }}</td>
-                    <td>{{ alumno.nombre }}</td>
-                    <td>{{ alumno.apellidoPaterno }}</td>
-                    <td>{{ alumno.apellidoMaterno }}</td>
-                    <td>{{ alumno.email }}</td>
-                    <td>{{ alumno.numeroControl }}</td>
-                    <td><small class="text-muted">{{ alumno.carrera }}</small></td>
-                    <td>{{ alumno.telefono }}</td>
-                    <td><img :src="alumno.imagenURL || defaultImage" alt="Alumno" width="40" height="40" class="rounded-circle shadow-sm" style="object-fit: cover;"></td>
-                    <td>
-                      <div class="d-flex gap-2">
-                        <button @click="editarAlumnos(alumno)" class="btn btn-warning btn-sm text-white" style="background-color: #f59e0b; border: none;">
-                          <i class="bi bi-pencil-fill"></i>
-                        </button>
-                        <button @click="eliminarAlumno(alumno.id)" class="btn btn-danger btn-sm" style="background-color: #ef4444; border: none;">
-                          <i class="bi bi-trash3-fill"></i>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
 
-            <!-- Pagination -->
-            <nav v-if="totalPages > 1" class="mt-4">
-              <ul class="pagination justify-content-center">
-                <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                  <button class="page-link" @click="currentPage--" aria-label="Previous">
-                    <span aria-hidden="true">&laquo; Anterior</span>
-                  </button>
-                </li>
-                <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: currentPage === page }">
-                  <button class="page-link" @click="currentPage = page">{{ page }}</button>
-                </li>
-                <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                  <button class="page-link" @click="currentPage++" aria-label="Next">
-                    <span aria-hidden="true">Siguiente &raquo;</span>
-                  </button>
-                </li>
-              </ul>
-            </nav>
+            <template v-if="searchQuery || !mostrarTodos">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th scope="col">#</th>
+                      <th scope="col">NOMBRE</th>
+                      <th scope="col">AP. PATERNO</th>
+                      <th scope="col">AP. MATERNO</th>
+                      <th scope="col">EMAIL</th>
+                      <th scope="col">Nº CONTROL</th>
+                      <th scope="col">CARRERA</th>
+                      <th scope="col">TELÉFONO</th>
+                      <th scope="col">IMAGEN</th>
+                      <th scope="col">ACCIONES</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(alumno, index) in alumnosPaginados" :key="alumno.id">
+                      <td>{{ (currentPage - 1) * pageSize + index + 1 }}</td>
+                      <td>{{ alumno.nombre }}</td>
+                      <td>{{ alumno.apellidoPaterno }}</td>
+                      <td>{{ alumno.apellidoMaterno }}</td>
+                      <td>{{ alumno.email }}</td>
+                      <td>{{ alumno.numeroControl }}</td>
+                      <td><small class="text-muted">{{ alumno.carrera }}</small></td>
+                      <td>{{ alumno.telefono }}</td>
+                      <td><img :src="alumno.imagenURL || defaultImage" alt="Alumno" width="40" height="40" class="rounded-circle shadow-sm" style="object-fit: cover;"></td>
+                      <td>
+                        <div class="d-flex gap-2">
+                          <button @click="editarAlumnos(alumno)" class="btn btn-warning btn-sm text-white" style="background-color: #f59e0b; border: none;">
+                            <i class="bi bi-pencil-fill"></i>
+                          </button>
+                          <button @click="eliminarAlumno(alumno.id)" class="btn btn-danger btn-sm" style="background-color: #ef4444; border: none;">
+                            <i class="bi bi-trash3-fill"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Pagination -->
+              <nav v-if="totalPages > 1" class="mt-4">
+                <ul class="pagination justify-content-center">
+                  <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                    <button class="page-link" @click="currentPage--" aria-label="Previous">
+                      <span aria-hidden="true">&laquo; Anterior</span>
+                    </button>
+                  </li>
+                  <li v-for="page in totalPages" :key="page" class="page-item" :class="{ active: currentPage === page }">
+                    <button class="page-link" @click="currentPage = page">{{ page }}</button>
+                  </li>
+                  <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                    <button class="page-link" @click="currentPage++" aria-label="Next">
+                      <span aria-hidden="true">Siguiente &raquo;</span>
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            </template>
+
+            <template v-else>
+              <div v-for="(students, carrera) in alumnosAgrupados" :key="carrera" class="mb-5">
+                <div class="d-flex align-items-center mb-3">
+                  <h6 class="m-0 text-primary fw-bold" style="border-left: 4px solid #1e3a8a; padding-left: 10px;">{{ carrera }}</h6>
+                  <span class="badge bg-primary rounded-pill ms-2 shadow-sm">{{ students.length }}</span>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                      <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">NOMBRE</th>
+                        <th scope="col">AP. PATERNO</th>
+                        <th scope="col">AP. MATERNO</th>
+                        <th scope="col">EMAIL</th>
+                        <th scope="col">Nº CONTROL</th>
+                        <th scope="col">TELÉFONO</th>
+                        <th scope="col">IMAGEN</th>
+                        <th scope="col">ACCIONES</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(alumno, index) in students" :key="alumno.id">
+                        <td>{{ index + 1 }}</td>
+                        <td>{{ alumno.nombre }}</td>
+                        <td>{{ alumno.apellidoPaterno }}</td>
+                        <td>{{ alumno.apellidoMaterno }}</td>
+                        <td>{{ alumno.email }}</td>
+                        <td>{{ alumno.numeroControl }}</td>
+                        <td>{{ alumno.telefono }}</td>
+                        <td><img :src="alumno.imagenURL || defaultImage" alt="Alumno" width="40" height="40" class="rounded-circle shadow-sm" style="object-fit: cover;"></td>
+                        <td>
+                          <div class="d-flex gap-2">
+                            <button @click="editarAlumnos(alumno)" class="btn btn-warning btn-sm text-white" style="background-color: #f59e0b; border: none;">
+                              <i class="bi bi-pencil-fill"></i>
+                            </button>
+                            <button @click="eliminarAlumno(alumno.id)" class="btn btn-danger btn-sm" style="background-color: #ef4444; border: none;">
+                              <i class="bi bi-trash3-fill"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </template>
           </div>
         </div>
       </div>
